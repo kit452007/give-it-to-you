@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Surprise for You</title>
+    <style>
+        body { 
+            margin: 0; 
+            background: #ff94e6; 
+            color: white; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            overflow: hidden; 
+            font-family: 'Arial', sans-serif; 
+        }
+
+        #ui { 
+            text-align: center; 
+            position: relative;
+            z-index: 100; 
+        }
+
+        canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            z-index: 1;
+            pointer-events: none; 
+        }
+
+        button { 
+            padding: 15px 40px; 
+            font-size: 24px; 
+            cursor: pointer; 
+            background: #ffb6c1; 
+            border: none; 
+            border-radius: 50px; 
+            margin: 10px; 
+            color: white; 
+            transition: 0.3s; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); 
+            font-weight: bold;
+        }
+
+        button:hover { 
+            background: #ff8da1; 
+            transform: scale(1.1); 
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<div id="ui">
+    <h1 id="question">ฉันมีเรื่องจะบอก อยากรู้ไหม?</h1>
+    <button onclick="startGift()">อยากรู้</button>
+    <button onclick="window.location.href='https://www.google.com'">ไม่</button>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particles = [];
+let animationStage = -1; 
+let requestID; // ใช้สำหรับหยุดอนิเมชั่น
+const particleCount = 450;
+
+function startGift() {
+    document.getElementById('ui').classList.add('hidden');
+    animationStage = 0;
+    initParticles();
+    runAnimation();
+    
+    setTimeout(() => { animationStage = 1; }, 5000);
+    setTimeout(() => { showHeartButton(); }, 9000);
+}
+
+function initParticles() {
+    particles = [];
+    for(let i=0; i<particleCount; i++) {
+        particles.push({
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            vx: (Math.random() - 0.5) * 12,
+            vy: (Math.random() - 0.5) * 12,
+            size: Math.random() * 3 + 1,
+            tx: 0, ty: 0
+        });
+    }
+}
+
+function getHeartPoint(t) {
+    let x = 16 * Math.pow(Math.sin(t), 3);
+    let y = -(13 * Math.cos(t) - 5 * Math.cos(2*t) - 2 * Math.cos(3*t) - Math.cos(4*t));
+    return { x: x * 14, y: y * 14 }; 
+}
+
+function runAnimation() {
+    if(animationStage === -1) return;
+
+    ctx.fillStyle = "rgba(255, 148, 230, 0.3)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    particles.forEach((p, index) => {
+        if (animationStage === 0) {
+            p.x += p.vx; p.y += p.vy;
+            if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+            if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        } 
+        else if (animationStage === 1) {
+            let t = (index / particleCount) * Math.PI * 2;
+            let target = getHeartPoint(t);
+            p.tx = target.x + canvas.width/2;
+            p.ty = target.y + canvas.height/2;
+            p.x += (p.tx - p.x) * 0.08;
+            p.y += (p.ty - p.y) * 0.08;
+        }
+        else if (animationStage === 2) {
+            p.vy += 0.2;
+            p.y += p.vy;
+            p.x += p.vx * 0.3;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = "white";
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = "white";
+        ctx.fill();
+    });
+
+    requestID = requestAnimationFrame(runAnimation);
+}
+
+function showHeartButton() {
+    const btn = document.createElement('button');
+    btn.innerHTML = "❤️ กดหัวใจสิ";
+    btn.style.position = "absolute";
+    btn.style.top = "50%";
+    btn.style.left = "50%";
+    btn.style.transform = "translate(-50%, -50%)";
+    btn.style.zIndex = "200";
+    btn.onclick = () => {
+        btn.remove();
+        animationStage = 2;
+        setTimeout(() => {
+            cancelAnimationFrame(requestID); // หยุดการวาดจุดทั้งหมดเพื่อกันกระพริบ
+            showCrystalText();
+        }, 1500);
+    };
+    document.body.appendChild(btn);
+}
+
+function showCrystalText() {
+    // เคลียร์พื้นหลังให้สะอาดเป็นสีชมพูรอบสุดท้าย
+    ctx.fillStyle = "#ff94e6";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const text = "รักเธอนะคับที่รัก";
+    let opacity = 0;
+    
+    function draw() {
+        // วาดทับด้วยสีพื้นหลังเบาๆ เพื่อทำ Fade-in
+        ctx.fillStyle = "rgba(255, 148, 230, 1)"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = "bold 65px 'Arial'";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        
+        // แสงเรืองรองสีชมพูฟุ้งๆ
+        ctx.shadowColor = "rgba(255, 20, 147, 0.9)";
+        ctx.shadowBlur = 40;
+        
+        // ตัวหนังสือสีแดง
+        ctx.fillStyle = `rgba(255, 0, 0, ${opacity})`;
+        ctx.fillText(text, canvas.width/2, canvas.height/2);
+        
+        if (opacity < 1) {
+            opacity += 0.02;
+            requestAnimationFrame(draw);
+        } else {
+            // เมื่อโชว์เสร็จแล้ว ค่อยไป Google
+            setTimeout(() => {
+                window.location.href = "https://www.google.com";
+            }, 4000);
+        }
+    }
+    draw();
+}
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+</script>
+</body>
+</html>
